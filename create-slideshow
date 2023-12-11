@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# montage -geometry 888x888 -tile 3x3 fui-{0..8}.jpg final.jpg
+# convert *.png -crop 2x2@ slide-%03d.jpg
+
+# Make sure command line arguments are provided
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 [audio_file] [image_directory] [output_file]"
+    exit 1
+fi
+
+# Assign user arguments
+AUDIO_FILE=$1
+IMAGE_DIRECTORY=$2
+OUTPUT_FILE=$3
+
+# Check that audio file exists
+if [ ! -f "$AUDIO_FILE" ]; then
+    echo "Audio file not found: $AUDIO_FILE"
+    exit 1
+fi
+
+# Check that image directory exists
+if [ ! -d "$IMAGE_DIRECTORY" ]; then
+    echo "Image directory not found: $IMAGE_DIRECTORY"
+    exit 1
+fi
+
+# The duration of the audio file in seconds
+audio_duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$AUDIO_FILE")
+audio_duration=${audio_duration%.*} # We only need the whole number part
+
+# Count how many jpg files in the input directory
+# image_count=$(ls -l $IMAGE_DIRECTORY/*.jpg | wc -l)
+image_count=$(ls -dq $IMAGE_DIRECTORY/slide-*.jpg | wc -l)
+
+
+# Calculate the frame rate
+frame_rate=$(bc <<< "scale=2; $image_count/$audio_duration")
+
+echo "audio duration: $audio_duration"
+echo "image count: $image_count"
+echo "frame rate: $frame_rate"
+
+# Create the video
+# ffmpeg -framerate $frame_rate -i "$IMAGE_DIRECTORY/slide-%03d.jpg" -i "$AUDIO_FILE" -vf "zoompan=z='min(zoom+0.0015,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',fade=t=out:st=4:d=1" -c:v libx264 -c:a aac -pix_fmt yuv420p "$OUTPUT_FILE"
+
+ffmpeg -loglevel error -framerate $frame_rate -i "$IMAGE_DIRECTORY/slide-%03d.jpg" -i "$AUDIO_FILE" -c:v libx264 -c:a aac -pix_fmt yuv420p "$OUTPUT_FILE"
+echo created: "$OUTPUT_FILE"
