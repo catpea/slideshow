@@ -36,7 +36,7 @@ image_count=$(ls -dq $IMAGE_DIRECTORY/slide-*.jpg | wc -l)
 
 
 # Calculate the frame rate
-frame_rate=$(bc <<< "scale=2; $image_count/$audio_duration")
+frame_rate=$(bc <<< "scale=4; $image_count/$audio_duration")
 
 echo "audio duration: $audio_duration"
 echo "image count: $image_count"
